@@ -175,6 +175,11 @@ public class ScrappingApi {
                                 headlinesList.add(headlines);
                             }
                         }
+
+                        System.out.println();
+                        System.out.println("Headline: " + headline);
+                        System.out.println("Link: " + newsLink);
+                        System.out.println("Image Url: " + imageLink);
                     }
                     catch (Exception e) {
                         System.out.println("@@@@@@@@@@@@@@@@@@@@@ Error: " + e);
@@ -413,23 +418,28 @@ public class ScrappingApi {
     }
 
     void saveHeadline(MongoCollection<org.bson.Document> collection, Headline headlines) {
-        try {
-            InsertOneResult result = collection.insertOne(new org.bson.Document()
-                    .append("heading", headlines.getHeading())
-                    .append("snipets", "")
-                    .append("pageLink", headlines.getPageLink())
-                    .append("imageUrl", headlines.getImageUrl())
-                    .append("timestamp", headlines.getTimestamp())
-                    .append("source", headlines.getSource())
-                    .append("tags", headlines.getTags())
-                    .append("createdDate", getFormattedTodayDate())
-                    .append("newsDate", getFormattedTodayDate())
-                    .append("scrapped", false));
+        if(!headlines.getHeading().contains("video")) {
+            try {
+                InsertOneResult result = collection.insertOne(new org.bson.Document()
+                        .append("heading", headlines.getHeading())
+                        .append("snipets", "")
+                        .append("pageLink", headlines.getPageLink())
+                        .append("imageUrl", headlines.getImageUrl())
+                        .append("timestamp", headlines.getTimestamp())
+                        .append("source", headlines.getSource())
+                        .append("tags", headlines.getTags())
+                        .append("createdDate", getFormattedTodayDate())
+                        .append("newsDate", getFormattedTodayDate())
+                        .append("scrapped", false));
 
-            System.out.println("Success! Inserted document id: " + result.getInsertedId());
+                System.out.println("Success! Inserted document id: " + result.getInsertedId());
+            }
+            catch (MongoException e) {
+                System.err.println("Unable to insert due to an error: " + e);
+            }
         }
-        catch (MongoException e) {
-            System.err.println("Unable to insert due to an error: " + e);
+        else {
+            System.out.println("================> Video news content.");
         }
     }
 
