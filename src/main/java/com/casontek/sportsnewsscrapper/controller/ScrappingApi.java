@@ -125,7 +125,7 @@ public class ScrappingApi {
                         headlines.setScrapped(false);
                         headlines.setTimestamp(formattedTime);
 
-                        if((!headlines.getPageLink().isEmpty() && headlines.getPageLink().length() > 10)  &&
+                        if((!newsLink.isEmpty() && newsLink.length() > 10)  &&
                                 !headlines.getTimestamp().isEmpty()) {
                             if(formattedTime.contains("h")){
                                 try {
@@ -218,6 +218,7 @@ public class ScrappingApi {
         MongoCollection<org.bson.Document> highlightsCollection = collection(db, highlights);
         for(org.bson.Document document : headlines) {
             crawlBBCHighlights(document, highlightsCollection);
+            
             try {
                 //updates the collection
                 Object id = document.get("_id");
@@ -279,19 +280,12 @@ public class ScrappingApi {
                     headlines.setHeading(headline);
                     headlinesList.add(headlines);
                 }
-
-                System.out.println();
-                System.out.println("Title: " + headline);
-                System.out.println("Link: " + newsLink);
-                System.out.println("Image Url: " + imageUrl);
-                System.out.println("Tag: " + tag);
-                System.out.println();
             }
 
-            /*
+            
             //performs database operation
             MongoCollection<org.bson.Document> collection = collection(mongoDatabase(), headlineCollection);
-            for(Headlines headlines : headlinesList) {
+            for(Headline headlines : headlinesList) {
                 if(!doesHeadlineExist(collection, headlines.getHeading())){
                     saveHeadline(collection, headlines);
                 }
@@ -299,8 +293,6 @@ public class ScrappingApi {
                     System.out.println("####### Headline already exist.");
                 }
             }
-             */
-
         }
         catch (IOException e) {
             System.out.println("@@@@@@@@@@@@@@@@@@@@@ Error: " + e);
@@ -418,7 +410,9 @@ public class ScrappingApi {
     }
 
     void saveHeadline(MongoCollection<org.bson.Document> collection, Headline headlines) {
-        if(!headlines.getHeading().contains("video")) {
+        List<String> args = List.of(headlines.getPageLink().split("/"));
+        if(!args.contains("video") && !args.contains("videos")
+          && !args.contains("sounds")) {
             try {
                 InsertOneResult result = collection.insertOne(new org.bson.Document()
                         .append("heading", headlines.getHeading())
@@ -500,32 +494,44 @@ public class ScrappingApi {
 
 
             try {
-                Element headlineElement = doc.selectFirst(".qa-story-headline");
+                String headlineCSSSelect = ".qa-story-headline";
+                if(url.contains("articles")) {
+                    headlineCSSSelect = ".ssrcss-1c92cct-Heading";
+                }
+                Element headlineElement = doc.selectFirst(headlineCSSSelect);
                 headline = headlineElement.text();
             }
             catch (Exception e) {
                 System.out.println("#################### headline error: " + e);
             }
 
-            try {
-                Element authorElement = doc.selectFirst(".qa-contributor-name");
-                author = authorElement.text();
+            if(!url.contains("articles")) {
+                try {
+                    Element authorElement = doc.selectFirst(".qa-contributor-name");
+                    author = authorElement.text();
+                }
+                catch (Exception e) {
+                    System.out.println("#################### Author error: " + e);
+                }
             }
-            catch (Exception e) {
-                System.out.println("#################### Author error: " + e);
+
+            if(!url.contains("articles")) {
+                try {
+                    Element sourceElement = doc.selectFirst(".qa-contributor-title");
+                    source = sourceElement.text();
+                }
+                catch (Exception e) {
+                    source = "BBC Sports";
+                    System.out.println("#################### Source error: " + e);
+                }
             }
 
             try {
-                Element sourceElement = doc.selectFirst(".qa-contributor-title");
-                source = sourceElement.text();
-            }
-            catch (Exception e) {
-                source = "BBC Sports";
-                System.out.println("#################### Source error: " + e);
-            }
-
-            try {
-                Element imgElement = doc.selectFirst(".qa-srcset-image");
+                String imgCSSSelect = ".qa-srcset-image";
+                if(url.contains("articles")) {
+                    imgCSSSelect = ".ssrcss-11yxrdo-Image";
+                }
+                Element imgElement = doc.selectFirst(imgCSSSelect);
                 imageUrl = imgElement.attr("src");
                 imageUrls = imgElement.attr("srcset");
             }
@@ -782,4 +788,5 @@ public class ScrappingApi {
             return formatNewsParagraphBody(names, 0, names.size());
         }
     }
+
 }
