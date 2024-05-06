@@ -422,7 +422,7 @@ public class ScrappingApi {
                         .append("timestamp", headlines.getTimestamp())
                         .append("source", headlines.getSource())
                         .append("tags", headlines.getTags())
-                        .append("createdDate", getFormattedTodayDate())
+                        .append("createdAt", getFormattedTodayDate())
                         .append("newsDate", getFormattedTodayDate())
                         .append("scrapped", false));
 
@@ -449,7 +449,7 @@ public class ScrappingApi {
                     .append("highlights", highlights.getHighlights())
                     .append("source", highlights.getSource())
                     .append("imageUrl", highlights.getImageUrl())
-                    .append("createdDate", getFormattedTodayDate())
+                    .append("createdAt", getFormattedTodayDate())
                     .append("newsDate", getFormattedTodayDate())
                     .append("highlightsTwo", highlights.getHighlightsTwo())
             );
