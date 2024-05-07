@@ -67,6 +67,7 @@
                 </configuration>
             </plugin>
         </plugins>
+        <finalName>sports-news-scrapper</finalName>
     </build>
 
 </project>
