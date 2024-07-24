@@ -6,18 +6,17 @@ import com.mongodb.MongoException;
 import com.mongodb.client.*;
 import com.mongodb.client.result.InsertOneResult;
 import org.apache.commons.lang3.StringUtils;
+import org.bson.conversions.Bson;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -321,6 +320,60 @@ public class ScrappingApi {
         }
 
         return "Sky SPorts News Crawling completed.";
+    }
+
+    @GetMapping("headline/delete")
+    public String clearOldHeadlines() {
+        MongoDatabase database = mongoDatabase();
+        MongoCollection<org.bson.Document> tCollection = collection(database, headlineCollection);
+        tCollection.find().forEach(document -> {
+            String[] newsItemDate = document.getString("newsDate").split("/");
+            Object id = document.get("_id");
+
+            LocalDate currentDate = LocalDate.now();
+            LocalDate newsDate = LocalDate.of(
+                    Integer.parseInt(newsItemDate[2]),
+                    Integer.parseInt(newsItemDate[1]),
+                    Integer.parseInt(newsItemDate[0])
+            );
+
+            long daysBetween = ChronoUnit.DAYS.between(newsDate, currentDate);
+            //delete headline if date is more than 2days
+            if(daysBetween > 2) {
+                tCollection.deleteOne(new org.bson.Document("_id", id));
+            }
+        });
+
+        return "Previous Headlines cleared.";
+    }
+
+    @GetMapping("highlights/delete")
+    public String clearOldHighlights() {
+        MongoCollection<org.bson.Document> highlightsCollection = collection(mongoDatabase(), highlights);
+        highlightsCollection.find().forEach(document -> {
+            Object id = document.get("_id");
+            if(document.get("newsDate") != null) {
+                String[] newsItemDate = document.getString("newsDate").split("/");
+
+                LocalDate currentDate = LocalDate.now();
+                LocalDate newsDate = LocalDate.of(
+                        Integer.parseInt(newsItemDate[2]),
+                        Integer.parseInt(newsItemDate[1]),
+                        Integer.parseInt(newsItemDate[0])
+                );
+
+                long daysBetween = ChronoUnit.DAYS.between(newsDate, currentDate);
+                //delete headline if date is more than 2days
+                if(daysBetween > 15) {
+                    highlightsCollection.deleteOne(new org.bson.Document("_id", id));
+                }
+            }
+            else {
+                highlightsCollection.deleteOne(new org.bson.Document("_id", id));
+            }
+        });
+
+        return "Previous Highlights cleared.";
     }
 
     int  getMonthValue(String month) {
@@ -787,6 +840,36 @@ public class ScrappingApi {
         else {
             return formatNewsParagraphBody(names, 0, names.size());
         }
+    }
+
+    @GetMapping("match/test")
+    public String levenshteinDistance(@RequestParam("first") String str1, @RequestParam("second") String str2) {
+        int m = str1.length();
+        int n = str2.length();
+
+        int[][] dp = new int[m + 1][n + 1];
+
+        for (int i = 0; i <= m; i++) {
+            dp[i][0] = i;
+        }
+
+        for (int j = 0; j <= n; j++) {
+            dp[0][j] = j;
+        }
+
+        for (int i = 1; i <= m; i++) {
+            for (int j = 1; j <= n; j++) {
+                if (str1.charAt(i - 1) == str2.charAt(j - 1)) {
+                    dp[i][j] = dp[i - 1][j - 1];
+                } else {
+                    dp[i][j] = 1 + Math.min(dp[i - 1][j - 1], Math.min(dp[i][j - 1], dp[i - 1][j]));
+                }
+            }
+        }
+
+        System.out.println("========================> Matching Level: " + dp[m][n]);
+
+        return "Matching Level: " + dp[m][n];
     }
 
 }
