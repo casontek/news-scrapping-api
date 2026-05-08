@@ -308,6 +308,9 @@ public class ScrappingApi {
 
         MongoCollection<org.bson.Document> hCollection = collection(database, highlights);
         for(org.bson.Document document : headlines) {
+            Object title = document.get("heading");
+            System.out.println("Title: " + title);
+
             crawlSkySportsHighlights(document, hCollection);
             try {
                 //updates the collection
@@ -326,6 +329,7 @@ public class ScrappingApi {
     public String clearOldHeadlines() {
         MongoDatabase database = mongoDatabase();
         MongoCollection<org.bson.Document> tCollection = collection(database, headlineCollection);
+        System.out.println("================> Headlines to clear: " + tCollection.countDocuments());
         tCollection.find().forEach(document -> {
             String[] newsItemDate = document.getString("newsDate").split("/");
             Object id = document.get("_id");
@@ -422,10 +426,11 @@ public class ScrappingApi {
     }
 
     MongoDatabase mongoDatabase() {
+        String connString = "mongodb+srv://fitsti-admin:ON2I2r08wMxQ96EY@fitstidb.we18yij.mongodb.net/fitstidb?retryWrites=true&w=majority";
         String connectionString = "mongodb+srv://Pope:08060158579@varitex-sports.xfko2tl.mongodb.net/varitex-sports-db?retryWrites=true&w=majority";
 
-        MongoClient mongoClient = MongoClients.create(connectionString);
-        return  mongoClient.getDatabase("varitex-sports-db");
+        MongoClient mongoClient = MongoClients.create(connString);
+        return  mongoClient.getDatabase("fitstidb"/*"varitex-sports-db"*/);
     }
 
     MongoCollection<org.bson.Document> collection(MongoDatabase database, String collection) {
@@ -492,6 +497,8 @@ public class ScrappingApi {
 
     void saveNewsHighlights(MongoCollection<org.bson.Document> collection, Highlights highlights) {
         try {
+            System.out.println("@@ News Highlight: " + highlights.toString());
+
             InsertOneResult result = collection.insertOne(new org.bson.Document()
                     .append("title", highlights.getTitle())
                     .append("snipets", highlights.getSnipets())
@@ -514,10 +521,7 @@ public class ScrappingApi {
         }
     }
 
-    void crawlBBCHighlights(
-            org.bson.Document document,
-            MongoCollection<org.bson.Document> highlightsCollection
-    ) {
+    void crawlBBCHighlights(org.bson.Document document, MongoCollection<org.bson.Document> highlightsCollection) {
         try {
             String postedDate = document.getString("timestamp");
             String tags = document.getString("tags");
@@ -670,10 +674,7 @@ public class ScrappingApi {
         }
     }
 
-    void  crawlSkySportsHighlights(
-            org.bson.Document document,
-            MongoCollection<org.bson.Document> highlightsCollection
-    ) {
+    void  crawlSkySportsHighlights(org.bson.Document document, MongoCollection<org.bson.Document> highlightsCollection) {
         try {
             String tags = document.getString("tags");
             String url = document.getString("pageLink");
