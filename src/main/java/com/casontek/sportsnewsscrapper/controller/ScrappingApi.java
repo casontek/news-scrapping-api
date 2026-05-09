@@ -11,6 +11,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -305,6 +306,7 @@ public class ScrappingApi {
         MongoDatabase database = mongoDatabase();
         MongoCollection<org.bson.Document> tCollection = collection(database, headlineCollection);
         List<org.bson.Document> headlines = unScrappedHeadlines(tCollection, "SkySports");
+        System.out.println("@@@ Headlines to be scrapped: " + headlines.size());
 
         MongoCollection<org.bson.Document> hCollection = collection(database, highlights);
         for(org.bson.Document document : headlines) {
@@ -380,6 +382,9 @@ public class ScrappingApi {
         return "Previous Highlights cleared.";
     }
 
+    @Value("${MONGO_DB_CONN}")
+    private String mongoDBConnString;
+
     int  getMonthValue(String month) {
         switch (month) {
             case "January" -> {
@@ -426,11 +431,10 @@ public class ScrappingApi {
     }
 
     MongoDatabase mongoDatabase() {
-        String connString = "mongodb+srv://fitsti-admin:ON2I2r08wMxQ96EY@fitstidb.we18yij.mongodb.net/fitstidb?retryWrites=true&w=majority";
-        String connectionString = "mongodb+srv://Pope:08060158579@varitex-sports.xfko2tl.mongodb.net/varitex-sports-db?retryWrites=true&w=majority";
+        System.out.println("@@@ MongoDB connection string: " + mongoDBConnString);
 
-        MongoClient mongoClient = MongoClients.create(connString);
-        return  mongoClient.getDatabase("fitstidb"/*"varitex-sports-db"*/);
+        MongoClient mongoClient = MongoClients.create(mongoDBConnString);
+        return  mongoClient.getDatabase("fitstidb");
     }
 
     MongoCollection<org.bson.Document> collection(MongoDatabase database, String collection) {
