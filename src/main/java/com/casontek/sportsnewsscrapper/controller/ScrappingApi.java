@@ -382,7 +382,7 @@ public class ScrappingApi {
         return "Previous Highlights cleared.";
     }
 
-    @Value("${MONGO_DB_CONN}")
+    @Value("${MONGO_DB_CONN:}")
     private String mongoDBConnString;
 
     int  getMonthValue(String month) {
@@ -431,8 +431,6 @@ public class ScrappingApi {
     }
 
     MongoDatabase mongoDatabase() {
-        System.out.println("@@@ MongoDB connection string: " + mongoDBConnString);
-
         MongoClient mongoClient = MongoClients.create(mongoDBConnString);
         return  mongoClient.getDatabase("fitstidb");
     }
